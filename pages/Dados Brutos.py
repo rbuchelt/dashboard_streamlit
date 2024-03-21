@@ -2,10 +2,16 @@ import streamlit as st
 import requests
 import pandas as pd
 import time
+import io  # Adicione esta importação no topo do seu arquivo
 
 @st.cache_data
-def converte_csv(df):
-    return df.to_csv(index=False).encode('utf-8')
+def converte_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False)
+    output.seek(0)  # Retorna ao início do stream
+    return output.getvalue()
+
 
 def mensagem_sucesso():
     sucesso = st.success("Arquivo baixado com sucesso!", icon="✅")
@@ -101,8 +107,13 @@ st.markdown("Escreva um nome para o arquivo")
 col1, col2 = st.columns(2)
 with col1:
     nome_arquivo = st.text_input("teste", label_visibility='collapsed', value='dados')
-    nome_arquivo += '.csv'
+    nome_arquivo += '.xlsx'
 
 with col2:
-    st.download_button("Fazer o download da tabela em CSV", data = converte_csv(dados),
-                       file_name=nome_arquivo, mime='text/csv', on_click=mensagem_sucesso)
+    st.download_button(
+        label="Fazer o download da tabela em Excel",
+        data=converte_excel(dados),
+        file_name=nome_arquivo,
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        on_click=mensagem_sucesso
+    )
